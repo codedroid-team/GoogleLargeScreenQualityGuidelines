@@ -356,7 +356,7 @@ class MultiWebPageMonitor:
         else:
             recipients = [gmail_user]
         
-        subject = f"Webpage Content Change Detected ({len(all_diffs)} URLs Updated)"
+        subject = "Google Large Screen Quality Guidelines Monitor"
         
         plain_parts = [f"Webpage Monitor has detected changes in {len(all_diffs)} URLs:\n"]
         for url, filename, diff_content in all_diffs:
