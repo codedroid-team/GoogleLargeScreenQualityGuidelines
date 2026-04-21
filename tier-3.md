@@ -1,5 +1,3 @@
-TEST CONTENT: This is a simulated change for testing purposes. This line should be removed after the monitor runs.
-
 Android Developers
 
 Design & Plan
