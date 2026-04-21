@@ -309,6 +309,28 @@ class MultiWebPageMonitor:
             logger.addHandler(handler)
         return logger
     
+    def format_diff_as_html(self, diff_content):
+        lines = diff_content.splitlines()
+        html_lines = []
+        
+        for line in lines:
+            if line.startswith('---') or line.startswith('+++'):
+                html_lines.append(f'<div style="color: #666; font-weight: bold;">{line}</div>')
+            elif line.startswith('-') and not line.startswith('---'):
+                escaped = line.replace('<', '&lt;').replace('>', '&gt;')
+                html_lines.append(f'<div style="background-color: #ffebee; color: #c62828; padding: 2px 5px;">{escaped}</div>')
+            elif line.startswith('+') and not line.startswith('+++'):
+                escaped = line.replace('<', '&lt;').replace('>', '&gt;')
+                html_lines.append(f'<div style="background-color: #e8f5e9; color: #2e7d32; padding: 2px 5px;">{escaped}</div>')
+            elif line.startswith('@@'):
+                escaped = line.replace('<', '&lt;').replace('>', '&gt;')
+                html_lines.append(f'<div style="color: #1565c0; font-weight: bold; margin-top: 10px;">{escaped}</div>')
+            else:
+                escaped = line.replace('<', '&lt;').replace('>', '&gt;')
+                html_lines.append(f'<div style="color: #333;">{escaped}</div>')
+        
+        return '\n'.join(html_lines)
+    
     def send_email_notification(self, all_diffs):
         """
         Send consolidated email notification with all diff content via SMTP.
@@ -334,30 +356,50 @@ class MultiWebPageMonitor:
         else:
             recipients = [gmail_user]
         
-        subject = "Webpage Content Change Detected: Multiple Adaptive App Quality Guidelines"
+        subject = f"Webpage Content Change Detected ({len(all_diffs)} URLs Updated)"
         
-        email_body_parts = ["Webpage Monitor has detected changes in the monitored content.\n"]
-        urls_changed = [entry[0] for entry in all_diffs]
-        email_body_parts.append(f"Changes detected in {len(urls_changed)} URLs:")
+        plain_parts = [f"Webpage Monitor has detected changes in {len(all_diffs)} URLs:\n"]
+        for url, filename, diff_content in all_diffs:
+            plain_parts.append(f"\n{'='*60}")
+            plain_parts.append(f"URL: {url}")
+            plain_parts.append(f"File: {filename}")
+            plain_parts.append("="*60)
+            plain_parts.append(diff_content)
+        plain_parts.append("\n" + "="*60)
+        plain_parts.append("Automated message from WebPage Monitor.")
+        plain_body = "\n".join(plain_parts)
+        
+        html_parts = [
+            '<html><body style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto;">',
+            f'<h2 style="color: #1976d2; border-bottom: 2px solid #1976d2; padding-bottom: 10px;">',
+            f'Webpage Content Change Detected</h2>',
+            f'<p style="font-size: 16px;">Changes detected in <strong style="color: #d32f2f;">{len(all_diffs)}</strong> URLs:</p>',
+            '<div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px;">'
+        ]
         
         for url, filename, diff_content in all_diffs:
-            email_body_parts.append(f"\n{'='*50}")
-            email_body_parts.append(f"URL: {url}")
-            email_body_parts.append(f"File: {filename}")
-            email_body_parts.append("="*50)
-            email_body_parts.append(diff_content)
+            html_parts.append('<div style="margin-bottom: 30px; border: 1px solid #ddd; border-radius: 6px; overflow: hidden;">')
+            html_parts.append('<div style="background-color: #1976d2; color: white; padding: 12px 15px;">')
+            html_parts.append(f'<strong>URL:</strong> <a href="{url}" style="color: white;">{url}</a>')
+            html_parts.append('</div>')
+            html_parts.append(f'<div style="background-color: #e3f2fd; padding: 8px 15px;"><strong>File:</strong> {filename}</div>')
+            html_parts.append('<div style="padding: 15px; font-family: Consolas, Monaco, monospace; font-size: 13px; line-height: 1.6; overflow-x: auto;">')
+            html_parts.append(self.format_diff_as_html(diff_content))
+            html_parts.append('</div></div>')
         
-        email_body_parts.append("\n" + "="*50)
-        email_body_parts.append("Automated message from WebPage Monitor.")
+        html_parts.append('</div>')
+        html_parts.append('<hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">')
+        html_parts.append('<p style="color: #666; font-size: 14px;">Automated message from WebPage Monitor.</p>')
+        html_parts.append('</body></html>')
+        html_body = '\n'.join(html_parts)
         
-        email_body = "\n".join(email_body_parts)
-        
-        msg = MIMEMultipart()
+        msg = MIMEMultipart('alternative')
         msg['From'] = gmail_user
         msg['To'] = ', '.join(recipients)
         msg['Subject'] = subject
         
-        msg.attach(MIMEText(email_body, 'plain'))
+        msg.attach(MIMEText(plain_body, 'plain'))
+        msg.attach(MIMEText(html_body, 'html'))
         
         try:
             server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
