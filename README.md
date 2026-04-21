@@ -59,8 +59,9 @@ Before the workflow can send email notifications, configure the following secret
 
 | Secret Name | Description |
 |-------------|-------------|
-| `GMAIL_USER` | Your Gmail email address |
+| `GMAIL_USER` | Your Gmail email address (used for SMTP authentication) |
 | `GMAIL_PASS` | Gmail App Password (not your regular password) |
+| `GMAIL_TO` | Recipient email addresses, comma-separated (e.g., `user1@example.com,user2@example.com`). If not set, emails are sent to GMAIL_USER |
 
 To generate a Gmail App Password:
 1. Go to [Google Account Security](https://myaccount.google.com/security)
@@ -77,6 +78,7 @@ pip install -r requirements.txt
 # Set environment variables
 export GMAIL_USER="your-email@gmail.com"
 export GMAIL_PASS="your-app-password"
+export GMAIL_TO="recipient1@example.com,recipient2@example.com"  # Optional: comma-separated recipients
 
 # Run the monitor
 python monitor.py

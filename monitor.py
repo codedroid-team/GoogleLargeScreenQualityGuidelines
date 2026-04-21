@@ -321,11 +321,18 @@ class MultiWebPageMonitor:
         """
         gmail_user = os.getenv('GMAIL_USER')
         gmail_pass = os.getenv('GMAIL_PASS')
+        gmail_to = os.getenv('GMAIL_TO')
         
         if not gmail_user or not gmail_pass:
             self.logger.error("Email credentials not found in environment variables")
             self.logger.error("Please set GMAIL_USER and GMAIL_PASS environment variables")
             return False
+        
+        recipients = []
+        if gmail_to:
+            recipients = [email.strip() for email in gmail_to.split(',') if email.strip()]
+        else:
+            recipients = [gmail_user]
         
         subject = "Webpage Content Change Detected: Multiple Adaptive App Quality Guidelines"
         
@@ -347,7 +354,7 @@ class MultiWebPageMonitor:
         
         msg = MIMEMultipart()
         msg['From'] = gmail_user
-        msg['To'] = gmail_user  # Send to the same account, can be changed as needed
+        msg['To'] = ', '.join(recipients)
         msg['Subject'] = subject
         
         msg.attach(MIMEText(email_body, 'plain'))
@@ -357,11 +364,11 @@ class MultiWebPageMonitor:
             server.login(gmail_user, gmail_pass)
             
             text = msg.as_string()
-            server.sendmail(gmail_user, gmail_user, text)
+            server.sendmail(gmail_user, recipients, text)
             
             server.quit()
             
-            self.logger.info("Consolidated email notification sent successfully")
+            self.logger.info(f"Email notification sent successfully to {len(recipients)} recipients")
             return True
         except Exception as e:
             self.logger.error(f"Failed to send email notification: {str(e)}")

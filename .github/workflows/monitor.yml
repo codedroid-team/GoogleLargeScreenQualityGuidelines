@@ -28,6 +28,7 @@ jobs:
         env:
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
           GMAIL_PASS: ${{ secrets.GMAIL_PASS }}
+          GMAIL_TO: ${{ secrets.GMAIL_TO }}
         run: python monitor.py
       
       - name: Commit changes if detected
